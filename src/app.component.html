@@ -1,0 +1,372 @@
+<main class="min-h-screen p-4 sm:p-8 flex flex-col items-center justify-center font-sans">
+
+  @if (isVerified() === true) {
+    <div class="w-full max-w-7xl animate-fadeIn">
+      
+      <!-- Main Audit Dashboard -->
+      <div class="main-frame">
+        <div class="p-4 sm:p-6">
+          <header class="audit-header">
+            <div class="as-logo">
+              <div class="as-logo-hex"></div>
+              <span class="as-logo-text">AS</span>
+            </div>
+            <h1 class="text-lg sm:text-xl font-bold text-cyan-400 tracking-widest mt-2">ATHENEA AUDIT SYSTEM</h1>
+          </header>
+
+          <div class="flex justify-between items-center text-xs text-cyan-400/70 mb-4 px-2">
+            <span>URL: {{ auditResult()?.target || target() }}</span>
+            <span>DATE: {{ (auditResult()?.timestamp | date:'yyyy-MM-dd') || (currentDate() | date:'yyyy-MM-dd') }}</span>
+          </div>
+
+          <!-- Input and Gauges Section -->
+          <div class="grid grid-cols-5 gap-4 items-center mb-6">
+            <!-- Left Gauge -->
+            <div class="col-span-1 flex justify-center">
+                <div class="gauge-container">
+                    <div class="gauge-circle" [class]="auditResult() ? getGaugeColorClass(wcagScore()) : 'gauge-idle'">
+                        <span class="gauge-score">{{ auditResult() ? wcagScore().toFixed(0) : '--' }}</span>
+                    </div>
+                    <span class="gauge-label">CTS + SÓNICA</span>
+                </div>
+            </div>
+
+            <!-- Center Input -->
+            <div class="col-span-3 flex flex-col gap-4">
+              <input 
+                type="text" 
+                [(ngModel)]="target"
+                (keyup.enter)="requestSupremacyAnalysis()"
+                placeholder="Introduce la URL a auditar..." 
+                [disabled]="isLoading()"
+                class="audit-input"
+              />
+              <button 
+                (click)="requestSupremacyAnalysis()"
+                [disabled]="isLoading() || !isOnline() || !target().trim()"
+                [title]="!isOnline() ? 'SE REQUIERE CONEXIÓN A LA RED PARA OPERAR' : ''"
+                class="audit-button"
+              >
+                <span>INICIAR AUDITORÍA</span>
+              </button>
+            </div>
+
+            <!-- Right Gauge -->
+            <div class="col-span-1 flex justify-center">
+                <div class="gauge-container">
+                    <div class="gauge-circle" [class]="auditResult() ? getGaugeColorClass(coreVitalsScore()) : 'gauge-idle'">
+                        <span class="gauge-score">{{ auditResult() ? coreVitalsScore().toFixed(0) : '--' }}</span>
+                    </div>
+                    <span class="gauge-label">HRL + PENSUM</span>
+                </div>
+            </div>
+          </div>
+          
+          <!-- Results Area -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-8">
+            <!-- METRICS PANEL -->
+            <div class="data-panel">
+              <h2 class="panel-title">MÉTRICAS WEB VERIFICABLES</h2>
+              <div class="h-full flex flex-col lg:flex-row items-center justify-between p-4">
+                @if (isLoading()) {
+                  <div class="w-full flex flex-col items-center justify-center text-center">
+                    <svg class="w-16 h-16 text-cyan-400 animate-spin-slow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-4 text-sm font-bold tracking-widest text-cyan-300 animate-pulse">{{ currentLoadingMessage() }}</p>
+                  </div>
+                } @else {
+                  <div class="w-full lg:w-1/3 space-y-2 text-sm pr-4">
+                    <div class="metric-item"><span>LCP:</span> <span>{{ webVitals().lcp }}s</span></div>
+                    <div class="metric-item"><span>FID:</span> <span>{{ webVitals().fid }}ms</span></div>
+                    <div class="metric-item"><span>CLS:</span> <span>{{ webVitals().cls }}</span></div>
+                    <div class="metric-item"><span>TTI:</span> <span>{{ webVitals().tti }}s</span></div>
+                  </div>
+                  <div class="w-full lg:w-2/3 h-48 lg:h-full mt-4 lg:mt-0">
+                    <app-line-chart [data]="lineChartData()" />
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- ANÁLISIS PANEL -->
+            <div class="data-panel">
+              <h2 class="panel-title">ANÁLISIS HOLÍSTICO</h2>
+              <div class="p-4">
+                @if (isLoading()) {
+                  <div class="flex items-center justify-center h-full text-cyan-500 text-sm tracking-widest">
+                    COMPILANDO INFORME...
+                  </div>
+                } @else if (holisticAnalysis(); as analysis) {
+                  <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 text-cyan-400 mt-1" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                      <div>
+                        <h3 class="font-bold text-cyan-200 text-sm">DIAGNÓSTICO HOLÍSTICO</h3>
+                        <p class="text-xs text-cyan-300/80 mt-1">{{ analysis.diagnostic }}</p>
+                      </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 text-cyan-400 mt-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734 2.942-2.106-2.106a1.532 1.532 0 01-2.286-.948zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                      <div>
+                        <h3 class="font-bold text-cyan-200 text-sm">RECOMENDACIONES EJECUTANAS</h3>
+                         <p class="text-xs text-cyan-300/80 mt-1">{{ analysis.recommendations }}</p>
+                      </div>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="flex items-center justify-center h-full text-cyan-500 text-sm tracking-widest">
+                    SIN DATOS DE ANÁLISIS DISPONIBLES.
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ENTREGABLES DE INTELIGENCIA Y PROTOCOLOS -->
+          <div class="data-panel mt-4">
+            <h2 class="panel-title">ENTREGABLES DE INTELIGENCIA Y PROTOCOLOS</h2>
+            <div class="p-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                <button (click)="executeAdvancedAnalysis('faith')" [disabled]="!auditResult() || isAdvancedAuditing()" class="guarantee-button">GARANTÍA DE FE</button>
+                <button (click)="executeAdvancedAnalysis('fingerprint')" [disabled]="!auditResult() || isAdvancedAuditing()" class="fingerprint-button">HUELLA DIGITAL CUÁNTICA</button>
+                <button (click)="executeAdvancedAnalysis('failure')" [disabled]="!auditResult() || isAdvancedAuditing()" class="failure-analysis-button">ANÁLISIS PREDICTIVO DE FALLO</button>
+                <button (click)="generateDossier()" [disabled]="!auditResult() || isGeneratingDeliverable()" class="deliverable-button">
+                  @if (isGeneratingDeliverable()) {
+                    <span class="animate-pulse">GENERANDO...</span>
+                  } @else {
+                    <span>GENERAR DOSSIER ESTRATÉGICO</span>
+                  }
+                </button>
+                <button (click)="showStrategicOffer.set(true)" class="protocol-button">VER PLANES DE SUPREMACÍA</button>
+                <button (click)="showFinalReport.set(true)" class="protocol-button">VER PROTOCOLO OPERATIVO</button>
+            </div>
+          </div>
+
+          <!-- HISTORY & ADVANCED ANALYSIS -->
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-4">
+            <!-- ADVANCED ANALYSIS & CODE ASSIST -->
+            <div class="lg:col-span-3 data-panel">
+              <h2 class="panel-title">MÓDULOS AVANZADOS Y ASISTENCIA DE CÓDIGO</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                
+                <!-- MÓDULO SÓNICA -->
+                <div class="hologram-section flex flex-col">
+                  <h3 class="section-title">MÓDULO SÓNICA: ASISTENTE DE CÓDIGO</h3>
+                  <p class="text-xs text-cyan-400/70 mb-3">Análisis armónico para la eliminación de errores lógicos y de borde.</p>
+                  <textarea class="code-input flex-grow" rows="8" placeholder="Inserte el fragmento de código a optimizar..." [(ngModel)]="sonicaCodeInput"></textarea>
+                  <button (click)="executeSonicaAnalysis()" [disabled]="isSonicaAuditing() || !sonicaCodeInput()" class="sonica-button mt-3">
+                    @if (isSonicaAuditing()) {
+                      <span class="animate-pulse">ANALIZANDO...</span>
+                    } @else {
+                      <span>EJECUTAR ANÁLISIS SÓNICA</span>
+                    }
+                  </button>
+                  @if(sonicaAuditResult(); as result) {
+                    <div class="mt-4 p-3 border border-green-700/50 bg-green-950/30 rounded-md text-xs text-green-200 overflow-y-auto max-h-48">
+                        @if (result === '[ INFORME NO CONCLUYENTE ]') {
+                          <p class="non-convergent-result">{{ result }}</p>
+                        } @else {
+                          <h4 class="font-bold mb-2">INFORME DE OPTIMIZACIÓN SÓNICA:</h4>
+                          <pre class="whitespace-pre-wrap font-sans">{{ result }}</pre>
+                        }
+                    </div>
+                  }
+                </div>
+
+                <!-- MÓDULO MAAC -->
+                <div class="hologram-section flex flex-col">
+                  <h3 class="section-title">MÓDULO MAAC: TRANSCRIPCIÓN SINÁPTICA</h3>
+                  <p class="text-xs text-cyan-400/70 mb-3">Transcripción de componentes UI a SVG de bajo nivel auto-contenido.</p>
+                  <textarea class="code-input flex-grow" rows="8" placeholder="Inserte el código del componente UI (ej. HTML con Tailwind)..." [(ngModel)]="maacCodeInput"></textarea>
+                  <button (click)="executeSynapticTranscription()" [disabled]="isTranscribing() || !maacCodeInput()" class="transcription-button mt-3">
+                    @if(isTranscribing()) {
+                      <span class="animate-pulse">TRANSCRIBIENDO...</span>
+                    } @else {
+                      <span>INICIAR TRANSCRIPCIÓN</span>
+                    }
+                  </button>
+                  @if(transcriptionResult()) {
+                    <div class="mt-4 space-y-3">
+                        <div class="p-3 border border-amber-700/50 bg-amber-950/30 rounded-md text-xs text-amber-200 overflow-y-auto max-h-24">
+                            <h4 class="font-bold mb-2">INFORME DE TRANSCRIPCIÓN:</h4>
+                            <pre class="whitespace-pre-wrap font-sans">{{ transcriptionResult()?.code }}</pre>
+                        </div>
+                        <div #previewContainer class="preview-canvas">
+                            <!-- El SVG renderizado por el 'effect' en el componente aparecerá aquí -->
+                        </div>
+                    </div>
+                  }
+                  @if (transcriptionError()) {
+                    <div class="mt-4 p-3 border border-amber-700/50 bg-amber-950/30 rounded-md text-xs text-amber-200">
+                        <p class="non-convergent-result">{{ transcriptionError() }}</p>
+                    </div>
+                  }
+                </div>
+
+              </div>
+            </div>
+            
+            <!-- HISTORY PANEL -->
+            <div class="lg:col-span-2 data-panel">
+                <h2 class="panel-title">HISTORIAL DE AUDITORÍA</h2>
+                <div class="p-2 sm:p-4 max-h-96 overflow-y-auto">
+                    @if (auditHistory().length > 0) {
+                        <ul class="space-y-2">
+                            @for (item of auditHistory(); track item.timestamp; let i = $index) {
+                                <li class="history-item-container" [class.active-history]="activeHistoryIndex() === i">
+                                    <button (click)="toggleHistory(i)" class="history-item-header">
+                                        <div class="flex-1 text-left">
+                                            <p class="font-bold text-cyan-200 truncate">{{ item.target }}</p>
+                                            <p class="text-xs text-cyan-400/70">{{ item.timestamp | date:'dd/MM/yy, hh:mm a' }}</p>
+                                        </div>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-400 transition-transform duration-300" [class.rotate-180]="expandedHistoryIndex() === i" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+        
+                                    @if (expandedHistoryIndex() === i) {
+                                        <div class="history-item-body">
+                                            <div class="grid grid-cols-2 gap-4 items-center">
+                                                <div class="h-32">
+                                                    <app-radar-chart [data]="item" />
+                                                </div>
+                                                <div class="text-xs space-y-1">
+                                                    <p><span class="font-bold text-cyan-300">CTS:</span> {{ item.cts.score }}</p>
+                                                    <p><span class="font-bold text-cyan-300">HRL:</span> {{ item.hrl.score }}</p>
+                                                    <p><span class="font-bold text-cyan-300">PENSUM:</span> {{ item.pensum.score }}</p>
+                                                    <p><span class="font-bold text-cyan-300">SÓNICA:</span> {{ item.sonica.score }}</p>
+                                                </div>
+                                            </div>
+                                            <p class="text-xs text-cyan-400/80 mt-2 border-t border-cyan-800/50 pt-2">
+                                                <strong>Análisis CTS:</strong> {{ item.cts.analysis }}
+                                            </p>
+                                            <button (click)="loadHistoryItem(i)" class="load-history-button">
+                                                CARGAR INFORME COMPLETO
+                                            </button>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    } @else {
+                        <p class="text-center text-cyan-500 text-sm py-8">No hay auditorías en el historial.</p>
+                    }
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else if (isVerified() === 'paf_challenge') {
+    <div class="w-full max-w-lg animate-fadeIn paf-container">
+      <div class="p-8 text-center">
+        <h2 class="text-2xl font-bold text-amber-300 tracking-widest">PROTOCOLO DE ACCESO FILIAL</h2>
+        <p class="text-amber-200/80 mt-2 text-sm">FASE 2: AUTORIZACIÓN DE CÓDIGO SOBERANO</p>
+        
+        <input 
+          type="password" 
+          [(ngModel)]="pafCodeInput"
+          (keyup.enter)="verifyPafCode()"
+          placeholder="CÓDIGO SECRETO" 
+          class="paf-input"
+          autofocus
+        />
+        
+        @if (pafError()) {
+          <p class="text-red-400 text-xs mt-2 animate-headShake">CÓDIGO INCORRECTO. ACCESO DENEGADO.</p>
+        }
+
+        <button (click)="verifyPafCode()" class="w-full mt-6 action-button bg-amber-600 text-white hover:bg-amber-500 shadow-[0_0_10px_rgba(217,119,6,0.7)]">
+          AUTORIZAR ACCESO
+        </button>
+
+        <div class="security-notice mt-6">
+            <h4 class="font-bold">AVISO DE SEGURIDAD SOBERANA</h4>
+            <p>La intrusión o copia no autorizada de este sistema conllevará una penalización de $300M USD. Protocolo GOOGLE: La intrusión resultará en una oferta de adquisición obligatoria de $27M USD y un pago de compromiso de $1M USD.</p>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="w-full max-w-lg animate-fadeIn verification-container">
+        <div class="p-8 text-center">
+            <h2 class="text-2xl font-bold text-purple-300 tracking-widest">PROTOCOLO DE ACCESO FILIAL</h2>
+            <p class="text-purple-200/80 mt-2 text-sm">FASE 1: VERIFICACIÓN DE HARDWARE SOBERANO</p>
+        
+            <div class="space-y-4 my-6 text-left">
+                @for (step of verificationSteps(); track step.label) {
+                    <div class="verification-step" [class.verified]="step.status === 'verified'">
+                        <div class="verification-status-icon">
+                            @if (step.status === 'pending') {
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            } @else if (step.status === 'verifying') {
+                                <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            } @else if (step.status === 'verified') {
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                            } @else if (step.status === 'failed') {
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                            }
+                        </div>
+                        <span class="verification-label">{{ step.label }}</span>
+                    </div>
+                }
+            </div>
+
+             @if (allStepsVerified()) {
+                <div class="final-signature">
+                    <div class="final-signature-logo">AS</div>
+                    <span class="final-signature-text">S O B E R A N O</span>
+                </div>
+            }
+            <div class="security-notice mt-6">
+                <h4 class="font-bold">AVISO DE SEGURIDAD SOBERANA</h4>
+                <p>La intrusión o copia no autorizada de este sistema conllevará una penalización de $300M USD. Protocolo GOOGLE: La intrusión resultará en una oferta de adquisición obligatoria de $27M USD y un pago de compromiso de $1M USD.</p>
+            </div>
+        </div>
+    </div>
+  }
+
+  <!-- MODALS -->
+  @if (activeAnalysis()) {
+    <div class="modal-overlay" (click)="resetAdvancedAnalysis()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3 class="modal-title">{{ advancedAnalysisTitle() }}</h3>
+            <button (click)="resetAdvancedAnalysis()" class="modal-close-button" aria-label="Cerrar modal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div class="modal-body">
+                @if (isAdvancedAuditing()) {
+                    <div class="flex items-center justify-center gap-4">
+                        <svg class="w-8 h-8 text-cyan-400 animate-spin-slow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="text-cyan-300 tracking-widest animate-pulse">GENERANDO INFORME DE INTELIGENCIA...</span>
+                    </div>
+                } @else if (advancedAuditResult(); as result) {
+                    @if (result === '[ ANÁLISIS NO CONVERGENTE ]') {
+                        <p class="non-convergent-result text-center">{{ result }}</p>
+                    } @else {
+                        <pre class="whitespace-pre-wrap font-sans text-cyan-200">{{ result }}</pre>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+  }
+
+  @if (showFinalReport()) {
+      <app-final-report (close)="showFinalReport.set(false)" />
+  }
+
+  @if (showStrategicOffer()) {
+    <div class="modal-overlay" (click)="showStrategicOffer.set(false)">
+        <div class="modal-content !max-w-6xl" (click)="$event.stopPropagation()">
+             <button (click)="showStrategicOffer.set(false)" class="modal-close-button" aria-label="Cerrar modal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div class="modal-body">
+                <app-strategic-offer />
+            </div>
+        </div>
+    </div>
+  }
+
+</main>

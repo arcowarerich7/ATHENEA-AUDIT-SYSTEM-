@@ -1,0 +1,17 @@
+{
+  "name": "ATHENEA AUDIT SYSTEM",
+  "short_name": "ATHENEA",
+  "description": "Protocolo de Supremacía Analítica para la Lectura Profunda y Optimización Predictiva.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#010409",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "src/assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
